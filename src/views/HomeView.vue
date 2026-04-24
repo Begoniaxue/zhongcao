@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useArticleStore } from '../stores/article'
+import { useUserStore } from '../stores/user'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 const articleStore = useArticleStore()
+const userStore = useUserStore()
 
 const allArticles = computed(() => articleStore.articles)
 const pageSize = 6
@@ -106,10 +108,10 @@ const rightColumnArticles = computed(() =>
   visibleArticles.value.filter((_, index) => index % 2 === 1)
 )
 
-const userInfo = {
-  avatar: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beautiful%20young%20woman%20portrait%20professional%20headshot&image_size=square',
-  nickname: '种草达人',
-  introduction: '热爱生活，分享美好，记录每一天的小确幸 ✨'
+const userInfo = computed(() => userStore.userInfo)
+
+function goToProfileEdit() {
+  router.push('/profile-edit')
 }
 
 function goToCreate() {
@@ -119,7 +121,7 @@ function goToCreate() {
 
 <template>
   <div class="home-container">
-    <div class="user-header">
+    <div class="user-header" @click="goToProfileEdit">
       <div class="avatar">
         <img :src="userInfo.avatar" alt="用户头像" />
       </div>
