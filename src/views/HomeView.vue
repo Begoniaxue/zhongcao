@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router'
 import { useArticleStore } from '../stores/article'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 const articleStore = useArticleStore()
@@ -33,6 +34,49 @@ function loadMore() {
 
     loading.value = false
   }, 300)
+}
+
+function syncVisibleArticles() {
+  const start = 0
+  const end = (currentPage.value - 1) * pageSize + pageSize
+  const newVisible = allArticles.value.slice(start, end)
+  visibleArticles.value = newVisible
+
+  if (end >= allArticles.value.length) {
+    hasMore.value = false
+  }
+}
+
+async function handleDelete(articleId: number, event: Event) {
+  event.stopPropagation()
+  
+  try {
+    await ElMessageBox.confirm('确定要删除这篇文章吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    articleStore.deleteArticle(articleId)
+    syncVisibleArticles()
+    ElMessage.success('删除成功')
+  } catch {
+    // 用户取消删除
+  }
+}
+
+function handlePin(articleId: number, event: Event) {
+  event.stopPropagation()
+  const article = articleStore.articles.find(a => a.id === articleId)
+  
+  articleStore.togglePin(articleId)
+  syncVisibleArticles()
+  
+  if (article?.isTop) {
+    ElMessage.success('已取消置顶')
+  } else {
+    ElMessage.success('已置顶')
+  }
 }
 
 function handleScroll() {
@@ -92,6 +136,7 @@ function goToCreate() {
             v-for="article in leftColumnArticles"
             :key="article.id"
             class="article-card"
+            :class="{ 'is-top': article.isTop }"
           >
             <div class="article-image">
               <img
@@ -99,8 +144,34 @@ function goToCreate() {
                 :src="article.images[0]"
                 :alt="article.title"
               />
+              <div v-if="article.isTop" class="top-badge">
+                <el-icon><Top /></el-icon>
+                <span>置顶</span>
+              </div>
             </div>
-            <div class="article-title">{{ article.title }}</div>
+            <div class="article-content">
+              <div class="article-title">{{ article.title }}</div>
+              <div class="article-actions">
+                <el-button
+                  type="text"
+                  size="small"
+                  :class="{ 'pin-active': article.isTop }"
+                  @click="handlePin(article.id, $event)"
+                >
+                  <el-icon><Top /></el-icon>
+                  <span>{{ article.isTop ? '取消置顶' : '置顶' }}</span>
+                </el-button>
+                <el-button
+                  type="text"
+                  size="small"
+                  class="delete-btn"
+                  @click="handleDelete(article.id, $event)"
+                >
+                  <el-icon><Delete /></el-icon>
+                  <span>删除</span>
+                </el-button>
+              </div>
+            </div>
           </div>
         </div>
         <div class="column">
@@ -108,6 +179,7 @@ function goToCreate() {
             v-for="article in rightColumnArticles"
             :key="article.id"
             class="article-card"
+            :class="{ 'is-top': article.isTop }"
           >
             <div class="article-image">
               <img
@@ -115,8 +187,34 @@ function goToCreate() {
                 :src="article.images[0]"
                 :alt="article.title"
               />
+              <div v-if="article.isTop" class="top-badge">
+                <el-icon><Top /></el-icon>
+                <span>置顶</span>
+              </div>
             </div>
-            <div class="article-title">{{ article.title }}</div>
+            <div class="article-content">
+              <div class="article-title">{{ article.title }}</div>
+              <div class="article-actions">
+                <el-button
+                  type="text"
+                  size="small"
+                  :class="{ 'pin-active': article.isTop }"
+                  @click="handlePin(article.id, $event)"
+                >
+                  <el-icon><Top /></el-icon>
+                  <span>{{ article.isTop ? '取消置顶' : '置顶' }}</span>
+                </el-button>
+                <el-button
+                  type="text"
+                  size="small"
+                  class="delete-btn"
+                  @click="handleDelete(article.id, $event)"
+                >
+                  <el-icon><Delete /></el-icon>
+                  <span>删除</span>
+                </el-button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -144,11 +242,13 @@ function goToCreate() {
 </template>
 
 <script lang="ts">
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Top, Delete } from '@element-plus/icons-vue'
 
 export default {
   components: {
-    Plus
+    Plus,
+    Top,
+    Delete
   }
 }
 </script>
@@ -236,6 +336,10 @@ export default {
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
+.article-card.is-top {
+  border: 2px solid #667eea;
+}
+
 .article-card:active {
   transform: translateY(-1px);
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
@@ -245,16 +349,39 @@ export default {
   width: 100%;
   aspect-ratio: 4 / 5;
   background-color: #f0f0f0;
+  position: relative;
 }
 
 .article-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+}
+
+.top-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.article-content {
+  display: flex;
+  flex-direction: column;
 }
 
 .article-title {
-  padding: 10px;
+  padding: 10px 10px 6px;
   font-size: 13px;
   font-weight: 500;
   color: #333;
@@ -264,6 +391,38 @@ export default {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+.article-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 8px 8px;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.article-actions .el-button {
+  font-size: 11px;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: #666;
+  transition: color 0.2s;
+}
+
+.article-actions .el-button:hover {
+  color: #667eea;
+}
+
+.article-actions .el-button.pin-active {
+  color: #667eea;
+}
+
+.article-actions .el-button.delete-btn:hover {
+  color: #f56c6c;
 }
 
 .loading-container {
@@ -354,8 +513,23 @@ export default {
   }
 
   .article-title {
-    padding: 12px;
+    padding: 12px 12px 8px;
     font-size: 14px;
+  }
+
+  .article-actions {
+    padding: 0 12px 12px;
+    padding-top: 10px;
+  }
+
+  .article-actions .el-button {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
+  .top-badge {
+    padding: 6px 12px;
+    font-size: 12px;
   }
 
   .fab-container {
@@ -393,8 +567,24 @@ export default {
   }
 
   .article-title {
-    padding: 8px;
+    padding: 8px 8px 4px;
     font-size: 12px;
+  }
+
+  .article-actions {
+    padding: 0 6px 6px;
+    padding-top: 6px;
+    gap: 4px;
+  }
+
+  .article-actions .el-button {
+    font-size: 10px;
+    padding: 2px 4px;
+  }
+
+  .top-badge {
+    padding: 3px 6px;
+    font-size: 10px;
   }
 
   .fab-container {
