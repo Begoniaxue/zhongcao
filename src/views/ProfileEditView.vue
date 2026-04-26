@@ -12,6 +12,8 @@ const nickname = ref(userStore.userInfo.nickname)
 const introduction = ref(userStore.userInfo.introduction)
 const currentAvatar = ref(userStore.userInfo.avatar)
 
+const avatarInput = ref<HTMLInputElement | null>(null)
+
 const showCropper = ref(false)
 const originalImage = ref<HTMLImageElement | null>(null)
 const cropCanvas = ref<HTMLCanvasElement | null>(null)
@@ -394,7 +396,7 @@ onUnmounted(() => {
     
     <div class="content">
       <div class="avatar-section">
-        <div class="avatar-wrapper" @click="$refs.avatarInput?.click()">
+        <div class="avatar-wrapper" @click="avatarInput?.click()">
           <img :src="currentAvatar" alt="头像" class="avatar" />
           <div class="avatar-overlay">
             <el-icon><Camera /></el-icon>

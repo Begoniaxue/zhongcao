@@ -1,5 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { EntityType } from './entity'
+
+export interface LinkedEntity {
+  type: EntityType
+  id: number
+  name: string
+  logo?: string
+}
 
 export interface Article {
   id: number
@@ -10,6 +18,7 @@ export interface Article {
   isTop: boolean
   topAt?: Date
   originalIndex?: number
+  linkedEntity?: LinkedEntity
 }
 
 export const useArticleStore = defineStore('article', () => {
@@ -64,14 +73,15 @@ export const useArticleStore = defineStore('article', () => {
     }
   ])
 
-  function addArticle(title: string, content: string, images: string[]) {
+  function addArticle(title: string, content: string, images: string[], linkedEntity?: LinkedEntity) {
     const newArticle: Article = {
       id: Date.now(),
       title,
       content,
       images,
       createdAt: new Date(),
-      isTop: false
+      isTop: false,
+      linkedEntity
     }
     
     const topCount = articles.value.filter(a => a.isTop).length
