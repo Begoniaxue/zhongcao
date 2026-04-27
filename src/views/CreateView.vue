@@ -124,27 +124,6 @@ function goBack() {
   router.back()
 }
 
-function openEntitySelectDialog() {
-  searchKeyword.value = ''
-  expandedProjectIds.value = new Set()
-  
-  if (linkedEntity.value) {
-    dialogSelectedId.value = linkedEntity.value.id
-    dialogSelectedType.value = linkedEntity.value.type
-    
-    if (linkedEntity.value.type === 'shop') {
-      const shop = entityStore.getShopById(linkedEntity.value.id)
-      if (shop && shop.projectId) {
-        expandedProjectIds.value.add(shop.projectId)
-      }
-    }
-  } else {
-    dialogSelectedId.value = null
-    dialogSelectedType.value = null
-  }
-  
-  showEntitySelectDialog.value = true
-}
 
 function closeEntitySelectDialog() {
   showEntitySelectDialog.value = false
@@ -283,38 +262,39 @@ function submitArticle() {
       </div>
 
       <div class="form-item">
-        <div class="link-section" @click="openEntitySelectDialog">
+        <div class="link-section" @click="showEntitySelectDialog = true">
           <div class="link-header">
-            <span class="link-title">
-              关联店铺
-              <span class="required-mark">*</span>
-            </span>
+            <div class="link-title">关联店铺<span class="required-mark">*</span></div>
             <el-icon class="link-arrow"><ArrowRight /></el-icon>
           </div>
           
-          <div v-if="linkedEntity" class="linked-preview">
-            <div class="linked-avatar">
-              <img :src="linkedEntity.logo" :alt="linkedEntity.name" />
-              <div class="linked-type-badge" :class="linkedEntity.type">
-                <el-icon v-if="linkedEntity.type === 'project'"><OfficeBuilding /></el-icon>
-                <el-icon v-else><Shop /></el-icon>
+          <template v-if="linkedEntity">
+            <div class="linked-preview">
+              <div class="linked-avatar">
+                <img :src="linkedEntity.logo" :alt="linkedEntity.name" />
+                <div class="linked-type-badge" :class="linkedEntity.type">
+                  <el-icon v-if="linkedEntity.type === 'project'"><OfficeBuilding /></el-icon>
+                  <el-icon v-else><Shop /></el-icon>
+                </div>
+              </div>
+              <div class="linked-info">
+                <div class="linked-name">{{ linkedEntity.name }}</div>
+                <div class="linked-type-text">
+                  {{ linkedEntity.type === 'project' ? '项目' : '店铺' }}
+                </div>
+              </div>
+              <div class="linked-clear" @click.stop="clearLinkedEntity">
+                <el-icon><Close /></el-icon>
               </div>
             </div>
-            <div class="linked-info">
-              <div class="linked-name">{{ linkedEntity.name }}</div>
-              <div class="linked-type-text">
-                {{ linkedEntity.type === 'project' ? '项目' : '店铺' }}
-              </div>
-            </div>
-            <div class="linked-clear" @click.stop="clearLinkedEntity">
-              <el-icon><Close /></el-icon>
-            </div>
-          </div>
+          </template>
           
-          <div v-else class="link-placeholder">
-            <el-icon class="placeholder-icon"><Plus /></el-icon>
-            <span class="placeholder-text">选择要关联的项目或店铺</span>
-          </div>
+          <template v-else>
+            <div class="link-placeholder">
+              <el-icon class="placeholder-icon"><OfficeBuilding /></el-icon>
+              <span class="placeholder-text">请选择关联的项目或店铺</span>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -1240,14 +1220,16 @@ export default {
   color: #667eea;
 }
 
-.dialog-project-item .entity-content {
+.dialog-project-item .entity-content,
+.dialog-shop-item .entity-content {
   display: flex;
   align-items: center;
   flex: 1;
   min-width: 0;
 }
 
-.dialog-project-item .entity-avatar {
+.dialog-project-item .entity-avatar,
+.dialog-shop-item .entity-avatar {
   position: relative;
   width: 48px;
   height: 48px;
@@ -1258,19 +1240,22 @@ export default {
   margin-left: 10px;
 }
 
-.dialog-project-item .entity-avatar img {
+.dialog-project-item .entity-avatar img,
+.dialog-shop-item .entity-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.dialog-project-item .entity-avatar.shop-avatar-small {
+.dialog-project-item .entity-avatar.shop-avatar-small,
+.dialog-shop-item .entity-avatar.shop-avatar-small {
   width: 40px;
   height: 40px;
   border-radius: 8px;
 }
 
-.dialog-project-item .entity-type-badge {
+.dialog-project-item .entity-type-badge,
+.dialog-shop-item .entity-type-badge {
   position: absolute;
   bottom: -2px;
   right: -2px;
@@ -1283,26 +1268,31 @@ export default {
   border: 2px solid white;
 }
 
-.dialog-project-item .entity-type-badge.project {
+.dialog-project-item .entity-type-badge.project,
+.dialog-shop-item .entity-type-badge.project {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.dialog-project-item .entity-type-badge.shop {
+.dialog-project-item .entity-type-badge.shop,
+.dialog-shop-item .entity-type-badge.shop {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
-.dialog-project-item .entity-type-badge .el-icon {
+.dialog-project-item .entity-type-badge .el-icon,
+.dialog-shop-item .entity-type-badge .el-icon {
   font-size: 10px;
   color: white;
 }
 
-.dialog-project-item .entity-info {
+.dialog-project-item .entity-info,
+.dialog-shop-item .entity-info {
   flex: 1;
   margin-left: 10px;
   min-width: 0;
 }
 
-.dialog-project-item .entity-name {
+.dialog-project-item .entity-name,
+.dialog-shop-item .entity-name {
   font-size: 15px;
   font-weight: 500;
   color: #333;
@@ -1312,7 +1302,8 @@ export default {
   text-overflow: ellipsis;
 }
 
-.dialog-project-item .entity-subtitle {
+.dialog-project-item .entity-subtitle,
+.dialog-shop-item .entity-subtitle {
   font-size: 12px;
   color: #999;
   white-space: nowrap;
@@ -1320,7 +1311,8 @@ export default {
   text-overflow: ellipsis;
 }
 
-.dialog-project-item .entity-check {
+.dialog-project-item .entity-check,
+.dialog-shop-item .entity-check {
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -1332,7 +1324,8 @@ export default {
   flex-shrink: 0;
 }
 
-.dialog-project-item .entity-check .el-icon {
+.dialog-project-item .entity-check .el-icon,
+.dialog-shop-item .entity-check .el-icon {
   font-size: 14px;
   color: white;
 }
