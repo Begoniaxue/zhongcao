@@ -28,6 +28,35 @@ const upload = multer({ storage })
 
 const fileStatus = new Map()
 
+const generateMockImages = (count = 2000) => {
+  const images = []
+  const categories = ['nature', 'city', 'food', 'people', 'animals', 'architecture', 'travel', 'art']
+  const widths = [300, 350, 400, 280, 320]
+  const heights = [400, 450, 500, 550, 380, 420, 480, 520]
+  
+  for (let i = 1; i <= count; i++) {
+    const category = categories[i % categories.length]
+    const width = widths[i % widths.length]
+    const height = heights[i % heights.length]
+    
+    images.push({
+      id: i,
+      url: `https://picsum.photos/seed/image-${i}/${width}/${height}`,
+      thumbnailUrl: `https://picsum.photos/seed/image-${i}/${width * 0.5}/${height * 0.5}`,
+      width,
+      height,
+      title: `图片 ${i} - ${category}`,
+      category,
+      likes: Math.floor(Math.random() * 10000),
+      author: `用户${Math.floor(Math.random() * 100) + 1}`
+    })
+  }
+  
+  return images
+}
+
+const MOCK_IMAGES = generateMockImages(2000)
+
 const saveChunk = (hash, index, buffer) => {
   return new Promise((resolve, reject) => {
     const hashDir = path.join(CHUNKS_DIR, hash)
@@ -258,6 +287,50 @@ app.post('/api/upload/merge', async (req, res) => {
 })
 
 app.use('/uploads/merged', express.static(MERGED_DIR))
+
+app.get('/api/images', (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1
+    const pageSize = parseInt(req.query.pageSize) || 10
+    const category = req.query.category
+    
+    let filteredImages = MOCK_IMAGES
+    if (category) {
+      filteredImages = MOCK_IMAGES.filter(img => img.category === category)
+    }
+    
+    const total = filteredImages.length
+    const totalPages = Math.ceil(total / pageSize)
+    const startIndex = (page - 1) * pageSize
+    const endIndex = Math.min(startIndex + pageSize, total)
+    
+    const items = filteredImages.slice(startIndex, endIndex)
+    
+    setTimeout(() => {
+      res.json({
+        success: true,
+        data: {
+          items,
+          pagination: {
+            page,
+            pageSize,
+            total,
+            totalPages,
+            hasNext: page < totalPages
+          }
+        },
+        timestamp: new Date().toISOString()
+      })
+    }, 100)
+  } catch (error) {
+    console.error('Get images error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get images',
+      error: error.message
+    })
+  }
+})
 
 app.get('/api/health', (req, res) => {
   res.json({

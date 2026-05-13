@@ -432,7 +432,7 @@ const simulateData = () => {
   return interval
 }
 
-let simulationInterval: number | null = null
+let simulationInterval: ReturnType<typeof setInterval> | null = null
 
 const startSimulation = () => {
   if (simulationInterval) return

@@ -9,6 +9,8 @@ import CheckoutView from '../views/coupon/CheckoutView.vue'
 import OrderView from '../views/coupon/OrderView.vue'
 import MallDashboardView from '../views/copkit/MallDashboardView.vue'
 import RealtimeDashboardView from '../views/RealtimeDashboardView.vue'
+import UploadDemoView from '../views/UploadDemoView.vue'
+import GalleryView from '../views/GalleryView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -62,6 +64,16 @@ const router = createRouter({
       path: '/realtime-dashboard',
       name: 'realtimeDashboard',
       component: RealtimeDashboardView
+    },
+    {
+      path: '/upload-demo',
+      name: 'uploadDemo',
+      component: UploadDemoView
+    },
+    {
+      path: '/gallery',
+      name: 'gallery',
+      component: GalleryView
     }
   ]
 })
