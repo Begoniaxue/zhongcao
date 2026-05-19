@@ -5,7 +5,7 @@
       <div class="category-filters">
         <button
           v-for="cat in categories"
-          :key="cat.value"
+          :key="cat.label"
           :class="{ active: activeCategory === cat.value }"
           @click="changeCategory(cat.value)"
           :disabled="loading"
@@ -106,7 +106,6 @@ const currentPage = ref(1)
 const activeCategory = ref<string | null>(null)
 const gap = ref(16)
 const columnCount = ref(4)
-const isFirstLoad = ref(true)
 
 const categories: Category[] = [
   { label: '全部', value: null },

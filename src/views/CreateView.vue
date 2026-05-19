@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useArticleStore, type LinkedEntity } from '../stores/article'
 import { useEntityStore, type EntityType, type Project, type Shop as ShopType } from '../stores/entity'
+import ImageUploader from '../components/ImageUploader.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -13,7 +14,6 @@ const entityStore = useEntityStore()
 const title = ref('')
 const content = ref('')
 const images = ref<string[]>([])
-const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const linkedEntity = ref<LinkedEntity | null>(null)
 
@@ -29,10 +29,6 @@ interface ProjectWithShops extends Project {
 }
 
 const maxImages = 6
-
-const remainingSlots = computed(() => maxImages - images.value.length)
-
-const showAddButton = computed(() => images.value.length < maxImages)
 
 const projectGroups = computed((): ProjectWithShops[] => {
   const projects = entityStore.accessibleProjects
@@ -88,37 +84,6 @@ onMounted(() => {
     }
   }
 })
-
-function handleFileChange(event: Event) {
-  const input = event.target as HTMLInputElement
-  const files = input.files
-
-  if (!files || files.length === 0) return
-
-  const remaining = maxImages - images.value.length
-  const filesToProcess = Array.from(files).slice(0, remaining)
-
-  filesToProcess.forEach((file) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const result = e.target?.result as string
-      images.value.push(result)
-    }
-    reader.readAsDataURL(file)
-  })
-
-  if (input) {
-    input.value = ''
-  }
-}
-
-function removeImage(index: number) {
-  images.value.splice(index, 1)
-}
-
-function triggerFileInput() {
-  fileInputRef.value?.click()
-}
 
 function goBack() {
   router.back()
@@ -304,34 +269,11 @@ function submitArticle() {
             <span class="image-title">添加图片</span>
             <span class="image-count">({{ images.length }}/{{ maxImages }})</span>
           </div>
-          <div class="image-grid">
-            <div
-              v-for="(image, index) in images"
-              :key="index"
-              class="image-item"
-            >
-              <img :src="image" alt="图片" />
-              <div class="image-remove" @click="removeImage(index)">
-                <el-icon><Close /></el-icon>
-              </div>
-            </div>
-            <div
-              v-if="showAddButton"
-              class="image-add"
-              @click="triggerFileInput"
-            >
-              <el-icon class="add-icon"><Plus /></el-icon>
-              <span class="add-text">添加图片</span>
-              <span class="add-remaining">还可添加 {{ remainingSlots }} 张</span>
-            </div>
-          </div>
-          <input
-            ref="fileInputRef"
-            type="file"
-            accept="image/*"
-            multiple
-            class="file-input"
-            @change="handleFileChange"
+          <ImageUploader
+            v-model="images"
+            :max-count="maxImages"
+            :compress-quality="0.8"
+            :crop-aspect-ratio="1"
           />
         </div>
       </div>
@@ -481,13 +423,12 @@ function submitArticle() {
 </template>
 
 <script lang="ts">
-import { ArrowLeft, ArrowRight, Plus, Close, OfficeBuilding, Shop, Search, ArrowDown, Check } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowRight, Close, OfficeBuilding, Shop, Search, ArrowDown, Check } from '@element-plus/icons-vue'
 
 export default {
   components: {
     ArrowLeft,
     ArrowRight,
-    Plus,
     Close,
     OfficeBuilding,
     Shop,
@@ -741,89 +682,6 @@ export default {
   margin-left: 4px;
 }
 
-.image-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.image-item {
-  position: relative;
-  aspect-ratio: 1;
-  border-radius: 8px;
-  overflow: hidden;
-  background-color: #f0f0f0;
-}
-
-.image-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.image-remove {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 22px;
-  height: 22px;
-  background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: white;
-  font-size: 12px;
-}
-
-.image-remove:active {
-  background-color: rgba(0, 0, 0, 0.7);
-}
-
-.image-add {
-  aspect-ratio: 1;
-  border-radius: 8px;
-  border: 2px dashed #ddd;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  background-color: #fafafa;
-}
-
-.image-add:active {
-  border-color: #667eea;
-  background-color: #f5f7ff;
-}
-
-.add-icon {
-  font-size: 26px;
-  color: #999;
-  margin-bottom: 4px;
-}
-
-.image-add:active .add-icon {
-  color: #667eea;
-}
-
-.add-text {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 2px;
-}
-
-.add-remaining {
-  font-size: 10px;
-  color: #999;
-}
-
-.file-input {
-  display: none;
-}
-
 @media (min-width: 768px) {
   .header {
     height: 56px;
@@ -919,37 +777,6 @@ export default {
   .image-count {
     font-size: 14px;
   }
-
-  .image-grid {
-    gap: 12px;
-  }
-
-  .image-remove {
-    width: 24px;
-    height: 24px;
-    font-size: 14px;
-  }
-
-  .image-add:hover {
-    border-color: #667eea;
-    background-color: #f5f7ff;
-  }
-
-  .image-add:hover .add-icon {
-    color: #667eea;
-  }
-
-  .add-icon {
-    font-size: 28px;
-  }
-
-  .add-text {
-    font-size: 13px;
-  }
-
-  .add-remaining {
-    font-size: 11px;
-  }
 }
 
 @media (max-width: 360px) {
@@ -988,28 +815,6 @@ export default {
 
   .image-title {
     font-size: 14px;
-  }
-
-  .image-grid {
-    gap: 8px;
-  }
-
-  .image-remove {
-    width: 20px;
-    height: 20px;
-    font-size: 11px;
-  }
-
-  .add-icon {
-    font-size: 22px;
-  }
-
-  .add-text {
-    font-size: 11px;
-  }
-
-  .add-remaining {
-    font-size: 9px;
   }
 }
 
