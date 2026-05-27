@@ -11,6 +11,13 @@ import MallDashboardView from '../views/copkit/MallDashboardView.vue'
 import RealtimeDashboardView from '../views/RealtimeDashboardView.vue'
 import UploadDemoView from '../views/UploadDemoView.vue'
 import GalleryView from '../views/GalleryView.vue'
+import MusicHomeView from '../views/music/MusicHomeView.vue'
+import PlaylistListView from '../views/music/PlaylistListView.vue'
+import PlaylistDetailView from '../views/music/PlaylistDetailView.vue'
+import MusicCategoryView from '../views/music/MusicCategoryView.vue'
+import MusicLibraryView from '../views/music/MusicLibraryView.vue'
+import PlayHistoryView from '../views/music/PlayHistoryView.vue'
+import FlashcardView from '../views/FlashcardView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,6 +26,36 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView
+    },
+    {
+      path: '/music',
+      name: 'musicHome',
+      component: MusicHomeView
+    },
+    {
+      path: '/music/playlists',
+      name: 'playlistList',
+      component: PlaylistListView
+    },
+    {
+      path: '/music/playlist/:id',
+      name: 'playlistDetail',
+      component: PlaylistDetailView
+    },
+    {
+      path: '/music/category',
+      name: 'musicCategory',
+      component: MusicCategoryView
+    },
+    {
+      path: '/music/library',
+      name: 'musicLibrary',
+      component: MusicLibraryView
+    },
+    {
+      path: '/music/history',
+      name: 'playHistory',
+      component: PlayHistoryView
     },
     {
       path: '/create',
@@ -74,6 +111,11 @@ const router = createRouter({
       path: '/gallery',
       name: 'gallery',
       component: GalleryView
+    },
+    {
+      path: '/flashcard',
+      name: 'flashcard',
+      component: FlashcardView
     }
   ]
 })
