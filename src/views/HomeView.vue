@@ -1,602 +1,506 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useArticleStore } from '../stores/article'
-import { useUserStore } from '../stores/user'
-import { computed, ref, onMounted, onUnmounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { useCouponStore } from '../stores/coupon'
+import { ElCarousel, ElCarouselItem } from 'element-plus'
 
 const router = useRouter()
-const articleStore = useArticleStore()
-const userStore = useUserStore()
+const couponStore = useCouponStore()
 
-const allArticles = computed(() => articleStore.articles)
-const pageSize = 6
-const currentPage = ref(1)
-const loading = ref(false)
-const hasMore = ref(true)
-const visibleArticles = ref<typeof allArticles.value>([])
-
-function loadMore() {
-  if (loading.value || !hasMore.value) return
-
-  loading.value = true
-
-  setTimeout(() => {
-    const start = 0
-    const end = currentPage.value * pageSize
-    const newVisible = allArticles.value.slice(start, end)
-
-    visibleArticles.value = newVisible
-
-    if (end >= allArticles.value.length) {
-      hasMore.value = false
-    } else {
-      currentPage.value++
-    }
-
-    loading.value = false
-  }, 300)
-}
-
-function syncVisibleArticles() {
-  const start = 0
-  const end = (currentPage.value - 1) * pageSize + pageSize
-  const newVisible = allArticles.value.slice(start, end)
-  visibleArticles.value = newVisible
-
-  if (end >= allArticles.value.length) {
-    hasMore.value = false
+const carouselItems = ref([
+  {
+    id: 1,
+    title: '夏日特惠',
+    subtitle: '全场卡券低至5折',
+    image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=summer%20sale%20banner%20with%20vibrant%20colors%20and%20discount%20tags&image_size=landscape_16_9',
+    link: '/coupon-list'
+  },
+  {
+    id: 2,
+    title: '音乐新发现',
+    subtitle: '精选歌单每日更新',
+    image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=music%20festival%20banner%20with%20headphones%20and%20sound%20waves&image_size=landscape_16_9',
+    link: '/music'
+  },
+  {
+    id: 3,
+    title: '种草社区',
+    subtitle: '分享美好生活',
+    image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=social%20media%20community%20banner%20with%20people%20sharing%20content&image_size=landscape_16_9',
+    link: '/community'
   }
-}
+])
 
-async function handleDelete(articleId: number, event: Event) {
-  event.stopPropagation()
-  
-  try {
-    await ElMessageBox.confirm('确定要删除这篇文章吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    
-    articleStore.deleteArticle(articleId)
-    syncVisibleArticles()
-    ElMessage.success('删除成功')
-  } catch {
-    // 用户取消删除
+const functionEntries = ref([
+  {
+    id: 1,
+    name: '种草社区',
+    icon: '🌱',
+    color: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
+    path: '/community'
+  },
+  {
+    id: 2,
+    name: '音乐',
+    icon: '🎵',
+    color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    path: '/music'
+  },
+  {
+    id: 3,
+    name: '电影',
+    icon: '🎬',
+    color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+    path: '/movie'
+  },
+  {
+    id: 4,
+    name: '卡券',
+    icon: '🎫',
+    color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    path: '/coupon-list'
+  },
+  {
+    id: 5,
+    name: '数据驾驶舱',
+    icon: '📊',
+    color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    path: '/mall-dashboard'
   }
-}
+])
 
-function handlePin(articleId: number, event: Event) {
-  event.stopPropagation()
-  const article = articleStore.articles.find(a => a.id === articleId)
-  
-  articleStore.togglePin(articleId)
-  syncVisibleArticles()
-  
-  if (article?.isTop) {
-    ElMessage.success('已取消置顶')
-  } else {
-    ElMessage.success('已置顶')
-  }
-}
-
-function handleScroll() {
-  const scrollTop = window.scrollY || document.documentElement.scrollTop
-  const windowHeight = window.innerHeight
-  const documentHeight = document.documentElement.scrollHeight
-
-  if (scrollTop + windowHeight >= documentHeight - 100) {
-    loadMore()
-  }
-}
-
-onMounted(() => {
-  loadMore()
-  window.addEventListener('scroll', handleScroll)
+const recommendedCoupons = computed(() => {
+  return couponStore.coupons.slice(0, 4)
 })
 
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
-})
-
-const leftColumnArticles = computed(() =>
-  visibleArticles.value.filter((_, index) => index % 2 === 0)
-)
-
-const rightColumnArticles = computed(() =>
-  visibleArticles.value.filter((_, index) => index % 2 === 1)
-)
-
-const userInfo = computed(() => userStore.userInfo)
-
-function goToProfileEdit() {
-  router.push('/profile-edit')
+function goToPage(path: string) {
+  router.push(path)
 }
 
-function goToCreate() {
-  router.push('/create')
+function goToCouponDetail(id: number) {
+  router.push(`/coupon-detail/${id}`)
 }
 </script>
 
 <template>
-  <div class="home-container">
-    <div class="user-header" @click="goToProfileEdit">
-      <div class="avatar">
-        <img :src="userInfo.avatar" alt="用户头像" />
-      </div>
-      <div class="user-info">
-        <div class="nickname">{{ userInfo.nickname }}</div>
-        <div class="introduction">{{ userInfo.introduction }}</div>
+  <div class="home-page">
+    <div class="carousel-section">
+      <el-carousel height="160px" :autoplay="true" :interval="4000">
+        <el-carousel-item v-for="item in carouselItems" :key="item.id">
+          <div class="carousel-item" @click="goToPage(item.link)">
+            <img :src="item.image" :alt="item.title" class="carousel-image" />
+            <div class="carousel-overlay">
+              <div class="carousel-title">{{ item.title }}</div>
+              <div class="carousel-subtitle">{{ item.subtitle }}</div>
+            </div>
+          </div>
+        </el-carousel-item>
+      </el-carousel>
+    </div>
+
+    <div class="function-section">
+      <div class="section-title">功能入口</div>
+      <div class="function-grid">
+        <div
+          v-for="entry in functionEntries"
+          :key="entry.id"
+          class="function-card"
+          @click="goToPage(entry.path)"
+        >
+          <div class="function-icon" :style="{ background: entry.color }">
+            <span>{{ entry.icon }}</span>
+          </div>
+          <div class="function-name">{{ entry.name }}</div>
+        </div>
       </div>
     </div>
 
-    <div class="article-list">
-      <div class="waterfall">
-        <div class="column">
-          <div
-            v-for="article in leftColumnArticles"
-            :key="article.id"
-            class="article-card"
-            :class="{ 'is-top': article.isTop }"
-          >
-            <div class="article-image">
-              <img
-                v-if="article.images.length > 0"
-                :src="article.images[0]"
-                :alt="article.title"
-              />
-              <div v-if="article.isTop" class="top-badge">
-                <el-icon><Top /></el-icon>
-                <span>置顶</span>
-              </div>
-            </div>
-            <div class="article-content">
-              <div class="article-title">{{ article.title }}</div>
-              <div class="article-actions">
-                <el-button
-                  type="text"
-                  size="small"
-                  :class="{ 'pin-active': article.isTop }"
-                  @click="handlePin(article.id, $event)"
-                >
-                  <el-icon><Top /></el-icon>
-                  <span>{{ article.isTop ? '取消置顶' : '置顶' }}</span>
-                </el-button>
-                <el-button
-                  type="text"
-                  size="small"
-                  class="delete-btn"
-                  @click="handleDelete(article.id, $event)"
-                >
-                  <el-icon><Delete /></el-icon>
-                  <span>删除</span>
-                </el-button>
-              </div>
-            </div>
-          </div>
+    <div class="coupon-section">
+      <div class="section-header">
+        <div class="section-title">推荐卡券</div>
+        <div class="see-more" @click="goToPage('/coupon-list')">
+          查看更多
+          <span class="arrow">›</span>
         </div>
-        <div class="column">
-          <div
-            v-for="article in rightColumnArticles"
-            :key="article.id"
-            class="article-card"
-            :class="{ 'is-top': article.isTop }"
-          >
-            <div class="article-image">
-              <img
-                v-if="article.images.length > 0"
-                :src="article.images[0]"
-                :alt="article.title"
-              />
-              <div v-if="article.isTop" class="top-badge">
-                <el-icon><Top /></el-icon>
-                <span>置顶</span>
+      </div>
+      <div class="coupon-grid">
+        <div
+          v-for="coupon in recommendedCoupons"
+          :key="coupon.id"
+          class="coupon-card"
+          @click="goToCouponDetail(coupon.id)"
+        >
+          <div class="coupon-image">
+            <img :src="coupon.mainImage" :alt="coupon.title" />
+            <div class="coupon-discount">{{ coupon.discount }}</div>
+          </div>
+          <div class="coupon-info">
+            <div class="coupon-title">{{ coupon.title }}</div>
+            <div class="coupon-subtitle">{{ coupon.subtitle }}</div>
+            <div class="coupon-price-row">
+              <div class="coupon-price">
+                <span class="currency">¥</span>
+                <span class="amount">{{ coupon.price }}</span>
               </div>
+              <div class="coupon-original-price">¥{{ coupon.originalPrice }}</div>
             </div>
-            <div class="article-content">
-              <div class="article-title">{{ article.title }}</div>
-              <div class="article-actions">
-                <el-button
-                  type="text"
-                  size="small"
-                  :class="{ 'pin-active': article.isTop }"
-                  @click="handlePin(article.id, $event)"
-                >
-                  <el-icon><Top /></el-icon>
-                  <span>{{ article.isTop ? '取消置顶' : '置顶' }}</span>
-                </el-button>
-                <el-button
-                  type="text"
-                  size="small"
-                  class="delete-btn"
-                  @click="handleDelete(article.id, $event)"
-                >
-                  <el-icon><Delete /></el-icon>
-                  <span>删除</span>
-                </el-button>
-              </div>
-            </div>
+            <div class="coupon-sold">已售 {{ coupon.soldCount }}</div>
           </div>
         </div>
       </div>
-
-      <div v-if="loading" class="loading-container">
-        <span class="loading-text">加载中...</span>
-      </div>
-      <div v-if="!hasMore && visibleArticles.length > 0" class="no-more">
-        <span class="no-more-text">没有更多了</span>
-      </div>
-    </div>
-
-    <div class="fab-container">
-      <el-button
-        type="primary"
-        circle
-        size="large"
-        class="create-fab"
-        @click="goToCreate"
-      >
-        <el-icon><Plus /></el-icon>
-      </el-button>
     </div>
   </div>
 </template>
 
-<script lang="ts">
-import { Plus, Top, Delete } from '@element-plus/icons-vue'
-
-export default {
-  components: {
-    Plus,
-    Top,
-    Delete
-  }
-}
-</script>
-
 <style scoped>
-.home-container {
+.home-page {
   min-height: 100vh;
   background-color: #f5f5f5;
   padding-bottom: 90px;
 }
 
-.user-header {
-  height: 100px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+.carousel-section {
+  padding: 12px;
 }
 
-.avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
+.carousel-section :deep(.el-carousel) {
+  border-radius: 12px;
   overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  flex-shrink: 0;
 }
 
-.avatar img {
+.carousel-section :deep(.el-carousel__indicators) {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  height: auto;
+  line-height: 1;
+}
+
+.carousel-section :deep(.el-carousel__indicator) {
+  padding: 4px 2px;
+}
+
+.carousel-section :deep(.el-carousel__button) {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  opacity: 0.6;
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.carousel-section :deep(.is-active .el-carousel__button) {
+  opacity: 1;
+  background-color: #fff;
+}
+
+.carousel-item {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.carousel-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.user-info {
-  margin-left: 12px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  flex: 1;
-  min-width: 0;
+.carousel-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 16px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  color: white;
 }
 
-.nickname {
-  font-size: 17px;
-  font-weight: 600;
-  color: white;
+.carousel-title {
+  font-size: 20px;
+  font-weight: 700;
   margin-bottom: 4px;
 }
 
-.introduction {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+.carousel-subtitle {
+  font-size: 13px;
+  opacity: 0.9;
 }
 
-.article-list {
-  padding: 12px;
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
 }
 
-.waterfall {
-  display: flex;
-  gap: 10px;
+.function-section {
+  padding: 0 12px 16px;
 }
 
-.column {
-  flex: 1;
+.function-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.function-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s;
 }
 
-.article-card {
+.function-card:active {
+  transform: scale(0.95);
+}
+
+.function-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.function-icon span {
+  font-size: 26px;
+}
+
+.function-name {
+  font-size: 12px;
+  color: #333;
+  font-weight: 500;
+  text-align: center;
+}
+
+.coupon-section {
+  padding: 0 12px 16px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.see-more {
+  font-size: 13px;
+  color: #667eea;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.arrow {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.coupon-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.coupon-card {
   background: white;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
+  cursor: pointer;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.article-card.is-top {
-  border: 2px solid #667eea;
+.coupon-card:active {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.article-card:active {
-  transform: translateY(-1px);
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
-}
-
-.article-image {
-  width: 100%;
-  aspect-ratio: 4 / 5;
-  background-color: #f0f0f0;
+.coupon-image {
   position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background-color: #f0f0f0;
 }
 
-.article-image img {
+.coupon-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
-.top-badge {
+.coupon-discount {
   position: absolute;
   top: 8px;
-  left: 8px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  right: 8px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   color: white;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 11px;
-  font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  font-weight: 600;
 }
 
-.article-content {
-  display: flex;
-  flex-direction: column;
+.coupon-info {
+  padding: 10px;
 }
 
-.article-title {
-  padding: 10px 10px 6px;
+.coupon-title {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: #333;
-  line-height: 1.5;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-bottom: 4px;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.article-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 0 8px 8px;
-  border-top: 1px solid #f0f0f0;
-  margin-top: 4px;
-  padding-top: 8px;
-}
-
-.article-actions .el-button {
+.coupon-subtitle {
   font-size: 11px;
-  padding: 4px 6px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  color: #666;
-  transition: color 0.2s;
-}
-
-.article-actions .el-button:hover {
-  color: #667eea;
-}
-
-.article-actions .el-button.pin-active {
-  color: #667eea;
-}
-
-.article-actions .el-button.delete-btn:hover {
-  color: #f56c6c;
-}
-
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px 0;
-}
-
-.loading-text {
-  font-size: 13px;
   color: #999;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.no-more {
+.coupon-price-row {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px 0;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
 }
 
-.no-more-text {
+.coupon-price {
+  display: flex;
+  align-items: baseline;
+  color: #f5576c;
+}
+
+.currency {
   font-size: 12px;
+  font-weight: 500;
+}
+
+.amount {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.coupon-original-price {
+  font-size: 11px;
+  color: #bbb;
+  text-decoration: line-through;
+}
+
+.coupon-sold {
+  font-size: 10px;
   color: #bbb;
 }
 
-.fab-container {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 100;
-}
-
-.create-fab {
-  width: 52px;
-  height: 52px;
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
-}
-
-.create-fab:active {
-  transform: scale(0.95);
-}
-
 @media (min-width: 768px) {
-  .user-header {
-    padding: 0 24px;
-  }
-
-  .avatar {
-    width: 70px;
-    height: 70px;
-    border-width: 3px;
-  }
-
-  .user-info {
-    margin-left: 16px;
-  }
-
-  .nickname {
-    font-size: 18px;
-  }
-
-  .introduction {
-    font-size: 13px;
-  }
-
-  .article-list {
-    padding: 16px 24px;
-    max-width: 600px;
+  .home-page {
+    max-width: 800px;
     margin: 0 auto;
   }
 
-  .waterfall {
-    gap: 12px;
+  .carousel-section {
+    padding: 16px 24px;
   }
 
-  .column {
-    gap: 12px;
+  :deep(.el-carousel) {
+    border-radius: 16px;
+    overflow: hidden;
   }
 
-  .article-card {
-    border-radius: 12px;
+  .function-section {
+    padding: 0 24px 20px;
   }
 
-  .article-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  .function-grid {
+    padding: 20px;
+    gap: 16px;
   }
 
-  .article-title {
-    padding: 12px 12px 8px;
-    font-size: 14px;
+  .function-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
   }
 
-  .article-actions {
-    padding: 0 12px 12px;
-    padding-top: 10px;
+  .function-icon span {
+    font-size: 32px;
   }
 
-  .article-actions .el-button {
-    font-size: 12px;
-    padding: 6px 8px;
+  .function-name {
+    font-size: 13px;
   }
 
-  .top-badge {
-    padding: 6px 12px;
-    font-size: 12px;
+  .coupon-section {
+    padding: 0 24px 24px;
   }
 
-  .fab-container {
-    bottom: 30px;
-    right: 30px;
+  .coupon-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
   }
 
-  .create-fab {
-    width: 56px;
-    height: 56px;
-  }
-
-  .create-fab:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  .coupon-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
   }
 }
 
 @media (max-width: 360px) {
-  .user-header {
-    height: 88px;
+  .function-grid {
+    gap: 8px;
+    padding: 12px;
   }
 
-  .avatar {
-    width: 56px;
-    height: 56px;
+  .function-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
   }
 
-  .nickname {
-    font-size: 15px;
+  .function-icon span {
+    font-size: 20px;
   }
 
-  .introduction {
-    font-size: 11px;
+  .function-name {
+    font-size: 10px;
   }
 
-  .article-title {
-    padding: 8px 8px 4px;
+  .coupon-grid {
+    gap: 8px;
+  }
+
+  .coupon-info {
+    padding: 8px;
+  }
+
+  .coupon-title {
     font-size: 12px;
   }
 
-  .article-actions {
-    padding: 0 6px 6px;
-    padding-top: 6px;
-    gap: 4px;
-  }
-
-  .article-actions .el-button {
-    font-size: 10px;
-    padding: 2px 4px;
-  }
-
-  .top-badge {
-    padding: 3px 6px;
-    font-size: 10px;
-  }
-
-  .fab-container {
-    bottom: 16px;
-    right: 16px;
-  }
-
-  .create-fab {
-    width: 48px;
-    height: 48px;
+  .amount {
+    font-size: 16px;
   }
 }
 </style>

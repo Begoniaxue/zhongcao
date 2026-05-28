@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import CommunityView from '../views/CommunityView.vue'
 import CreateView from '../views/CreateView.vue'
 import ProfileEditView from '../views/ProfileEditView.vue'
 import CouponListView from '../views/coupon/CouponListView.vue'
@@ -18,6 +19,9 @@ import MusicCategoryView from '../views/music/MusicCategoryView.vue'
 import MusicLibraryView from '../views/music/MusicLibraryView.vue'
 import PlayHistoryView from '../views/music/PlayHistoryView.vue'
 import FlashcardView from '../views/FlashcardView.vue'
+import MovieHomeView from '../views/movie/MovieHomeView.vue'
+import MyFavoritesView from '../views/movie/MyFavoritesView.vue'
+import BrowseHistoryView from '../views/movie/BrowseHistoryView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,6 +30,11 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView
+    },
+    {
+      path: '/community',
+      name: 'community',
+      component: CommunityView
     },
     {
       path: '/music',
@@ -116,6 +125,21 @@ const router = createRouter({
       path: '/flashcard',
       name: 'flashcard',
       component: FlashcardView
+    },
+    {
+      path: '/movie',
+      name: 'movie',
+      component: MovieHomeView
+    },
+    {
+      path: '/movie/favorites',
+      name: 'movieFavorites',
+      component: MyFavoritesView
+    },
+    {
+      path: '/movie/history',
+      name: 'movieHistory',
+      component: BrowseHistoryView
     }
   ]
 })

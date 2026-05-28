@@ -10,8 +10,10 @@ const playerStore = usePlayerStore()
 const audioRef = ref<HTMLAudioElement | null>(null)
 const showFullscreen = ref(false)
 
+const musicRouteNames = ['musicHome', 'playlistList', 'playlistDetail', 'musicCategory', 'musicLibrary', 'playHistory']
+
 const showPlayer = computed(() => {
-  return route.name !== 'flashcard'
+  return musicRouteNames.includes(route.name as string)
 })
 
 onMounted(() => {
