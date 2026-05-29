@@ -2,10 +2,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import type { Movie } from '../../types/movie'
+import type { Movie, Cinema } from '../../types/movie'
 import { getHotMoviesList, getHotSeriesList, getTopRatedList, filterMovies, searchMovies, type FilterOptions } from '../../services/movieApi'
 import { isFavorite, toggleFavorite } from '../../utils/movieStorage'
 import MovieCard from '../../components/MovieCard.vue'
+import CinemaCard from '../../components/CinemaCard.vue'
 import MovieDetailModal from '../../components/MovieDetailModal.vue'
 
 const router = useRouter()
@@ -15,6 +16,9 @@ const searchInput = ref('')
 const hotMovies = ref<Movie[]>([])
 const hotSeries = ref<Movie[]>([])
 const topRated = ref<Movie[]>([])
+const showingMovies = ref<Movie[]>([])
+const comingMovies = ref<Movie[]>([])
+const cinemas = ref<Cinema[]>([])
 const searchResults = ref<Movie[]>([])
 const loading = ref(false)
 const loadingMore = ref(false)
@@ -26,6 +30,8 @@ const browseAllMovies = ref<Movie[]>([])
 const isBrowseAllMode = ref(false)
 const browseAllTotal = ref(0)
 const loadingRankings = ref(false)
+
+const cinemaSortBy = ref<'distance' | 'popularity' | 'price'>('distance')
 
 const showFilter = ref(false)
 const filterOptions = ref<FilterOptions>({
@@ -65,6 +71,27 @@ const categoryOptions: { label: string; value: 'all' | 'movie' | 'series' }[] = 
   { label: '仅剧集', value: 'series' },
 ]
 
+const sortOptions = [
+  { label: '距离最近', value: 'distance' },
+  { label: '人气最高', value: 'popularity' },
+  { label: '价格最低', value: 'price' }
+]
+
+const sortedCinemas = computed(() => {
+  return [...cinemas.value].sort((a, b) => {
+    switch (cinemaSortBy.value) {
+      case 'distance':
+        return a.distance - b.distance
+      case 'popularity':
+        return b.popularity - a.popularity
+      case 'price':
+        return a.minPrice - b.minPrice
+      default:
+        return 0
+    }
+  })
+})
+
 const hasActiveFilters = computed(() => {
   return filterOptions.value.genre !== 'all' ||
     filterOptions.value.yearRange !== 'all' ||
@@ -81,6 +108,114 @@ const hasMoreResults = computed(() => {
   return searchResults.value.length < totalResults.value
 })
 
+function generateMockCinemas(): Cinema[] {
+  return [
+    {
+      id: 'c1',
+      name: '万达影城（CBD万达广场店）',
+      address: '北京市朝阳区建国路88号CBD万达广场5层',
+      phone: '010-88886666',
+      businessHours: '09:00 - 24:00',
+      distance: 500,
+      popularity: 9850,
+      minPrice: 39,
+      hallTypes: ['IMAX', 'Dolby', 'Normal']
+    },
+    {
+      id: 'c2',
+      name: 'CGV影城（万象城店）',
+      address: '北京市朝阳区青年路136号万象城购物中心6层',
+      phone: '010-66668888',
+      businessHours: '10:00 - 23:30',
+      distance: 1200,
+      popularity: 8720,
+      minPrice: 49,
+      hallTypes: ['IMAX', 'Dolby', 'Normal']
+    },
+    {
+      id: 'c3',
+      name: '金逸影城（大悦城店）',
+      address: '北京市西城区西单北大街131号大悦城7层',
+      phone: '010-55557777',
+      businessHours: '09:30 - 22:30',
+      distance: 2800,
+      popularity: 7650,
+      minPrice: 35,
+      hallTypes: ['Dolby', 'Normal']
+    },
+    {
+      id: 'c4',
+      name: '博纳国际影城（悠唐店）',
+      address: '北京市朝阳区朝阳门外大街三丰北里2号悠唐购物中心5层',
+      phone: '010-33339999',
+      businessHours: '09:00 - 23:00',
+      distance: 3500,
+      popularity: 6890,
+      minPrice: 45,
+      hallTypes: ['IMAX', 'Normal']
+    },
+    {
+      id: 'c5',
+      name: '百老汇影城（国瑞城店）',
+      address: '北京市东城区崇文门外大街18号国瑞城购物中心7层',
+      phone: '010-22224444',
+      businessHours: '10:00 - 22:00',
+      distance: 4200,
+      popularity: 5430,
+      minPrice: 29,
+      hallTypes: ['Normal']
+    },
+    {
+      id: 'c6',
+      name: '保利国际影城（天安门店）',
+      address: '北京市东城区前门东大街23号',
+      phone: '010-11113333',
+      businessHours: '09:00 - 23:30',
+      distance: 5600,
+      popularity: 6120,
+      minPrice: 59,
+      hallTypes: ['IMAX', 'Dolby', 'Normal']
+    }
+  ]
+}
+
+function generateMockMovies(status: 'showing' | 'coming', count: number): Movie[] {
+  const showingTitles = [
+    { title: '流浪地球3', year: '2025', genre: '科幻/冒险', rating: '9.2' },
+    { title: '速度与激情11', year: '2025', genre: '动作/犯罪', rating: '8.5' },
+    { title: '复仇者联盟：秘密战争', year: '2025', genre: '科幻/动作', rating: '9.0' },
+    { title: '封神第三部', year: '2025', genre: '奇幻/古装', rating: '8.8' },
+    { title: '唐人街探案4', year: '2025', genre: '喜剧/悬疑', rating: '8.3' },
+    { title: '哪吒之魔童闹海', year: '2025', genre: '动画/奇幻', rating: '9.1' }
+  ]
+  
+  const comingTitles = [
+    { title: '阿凡达3：火与灰', year: '2025', genre: '科幻/冒险', rating: '' },
+    { title: '星球大战：新纪元', year: '2025', genre: '科幻/动作', rating: '' },
+    { title: '功夫熊猫5', year: '2025', genre: '动画/喜剧', rating: '' },
+    { title: '侏罗纪世界：重生', year: '2025', genre: '科幻/冒险', rating: '' },
+    { title: '哈利波特与被诅咒的孩子', year: '2025', genre: '奇幻/冒险', rating: '' },
+    { title: '冰雪奇缘3', year: '2025', genre: '动画/奇幻', rating: '' }
+  ]
+  
+  const titles = status === 'showing' ? showingTitles : comingTitles
+  return titles.slice(0, count).map((item, index) => ({
+    id: `${status}_${index + 1}`,
+    title: item.title,
+    year: item.year,
+    type: 'movie',
+    poster: `https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=movie%20poster%20${encodeURIComponent(item.title)}%20cinematic%20dramatic&image_size=portrait_2_3`,
+    rating: item.rating,
+    genre: item.genre,
+    runtime: status === 'showing' ? `${110 + index * 10}分钟` : undefined,
+    status,
+    plot: status === 'showing' ? '这是一部精彩的电影，讲述了一个震撼人心的故事...' : '即将上映，敬请期待...',
+    actors: '主演演员1, 主演演员2, 主演演员3, 主演演员4',
+    director: '著名导演',
+    released: status === 'showing' ? '2025-01-15' : '2025-07-01'
+  }))
+}
+
 async function loadRankings() {
   loadingRankings.value = true
   try {
@@ -92,6 +227,10 @@ async function loadRankings() {
     hotMovies.value = movies
     hotSeries.value = series
     topRated.value = top
+    
+    showingMovies.value = generateMockMovies('showing', 6)
+    comingMovies.value = generateMockMovies('coming', 6)
+    cinemas.value = generateMockCinemas()
   } catch (error) {
     ElMessage.error('加载榜单失败')
   } finally {
@@ -255,8 +394,17 @@ async function handleSearchImpl() {
 }
 
 function openMovieDetail(movie: Movie) {
-  selectedMovie.value = movie
-  showDetail.value = true
+  if (movie.status === 'showing' || movie.status === 'coming') {
+    sessionStorage.setItem(`movie_${movie.id}`, JSON.stringify(movie))
+    router.push(`/movie/detail/${movie.id}`)
+  } else {
+    selectedMovie.value = movie
+    showDetail.value = true
+  }
+}
+
+function handleCinemaClick(cinema: Cinema) {
+  ElMessage.info(`影院详情：${cinema.name}`)
 }
 
 function clearSearch() {
@@ -307,7 +455,7 @@ onMounted(() => {
           </button>
         </div>
       </div>
-      <div class="search-section">
+      <div class="header-search-section">
         <div class="search-box">
           <span class="search-icon">🔍</span>
           <input
@@ -518,36 +666,53 @@ onMounted(() => {
         </div>
         
         <template v-else>
-          <section class="ranking-section">
+          <section class="cinema-section">
             <div class="section-header">
-              <h2 class="section-title">🔥 热门电影榜</h2>
-              <div class="browse-all-btn" @click="enterBrowseAllMode">
-                浏览全部 →
+              <h2 class="section-title">🏢 热门影院</h2>
+              <div class="sort-selector">
+                <select v-model="cinemaSortBy" class="sort-select">
+                  <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
               </div>
             </div>
-            <div class="ranking-grid">
+            <div class="cinema-list">
+              <CinemaCard
+                v-for="cinema in sortedCinemas"
+                :key="cinema.id"
+                :cinema="cinema"
+                @click="handleCinemaClick"
+              />
+            </div>
+          </section>
+
+          <section class="movie-section">
+            <div class="section-header">
+              <h2 class="section-title">🔥 正在热映</h2>
+              <div class="browse-all-btn" @click="enterBrowseAllMode">
+                查看全部 →
+              </div>
+            </div>
+            <div class="movie-grid">
               <MovieCard
-                v-for="(movie, index) in hotMovies.slice(0, 6)"
+                v-for="movie in showingMovies"
                 :key="movie.id"
                 :movie="movie"
-                :show-rank="true"
-                :rank="index + 1"
                 @click="openMovieDetail"
               />
             </div>
           </section>
 
-          <section class="ranking-section">
+          <section class="movie-section">
             <div class="section-header">
-              <h2 class="section-title">📺 热门剧集榜</h2>
+              <h2 class="section-title">🎬 即将上映</h2>
             </div>
-            <div class="ranking-grid">
+            <div class="movie-grid">
               <MovieCard
-                v-for="(movie, index) in hotSeries.slice(0, 6)"
+                v-for="movie in comingMovies"
                 :key="movie.id"
                 :movie="movie"
-                :show-rank="true"
-                :rank="index + 1"
                 @click="openMovieDetail"
               />
             </div>
@@ -653,7 +818,7 @@ onMounted(() => {
   background: rgba(0, 0, 0, 0.05);
 }
 
-.search-section {
+.header-search-section {
   padding: 0 16px 12px;
   display: flex;
   align-items: center;
@@ -889,6 +1054,14 @@ onMounted(() => {
   margin-bottom: 32px;
 }
 
+.cinema-section {
+  margin-bottom: 28px;
+}
+
+.movie-section {
+  margin-bottom: 28px;
+}
+
 .ranking-section {
   margin-bottom: 28px;
 }
@@ -912,6 +1085,32 @@ onMounted(() => {
   font-weight: 400;
   color: #999;
   margin-left: 6px;
+}
+
+.sort-selector {
+  display: flex;
+  align-items: center;
+}
+
+.sort-select {
+  padding: 6px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  font-size: 13px;
+  background: white;
+  outline: none;
+  cursor: pointer;
+  color: #666;
+}
+
+.sort-select:focus {
+  border-color: #667eea;
+}
+
+.cinema-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .ranking-grid {
@@ -1139,7 +1338,7 @@ onMounted(() => {
     gap: 10px;
   }
 
-  .search-section {
+  .header-search-section {
     padding: 0 12px 10px;
     gap: 6px;
   }
@@ -1265,7 +1464,7 @@ onMounted(() => {
     font-size: 12px;
   }
 
-  .search-section {
+  .header-search-section {
     padding: 0 12px 10px;
   }
 
@@ -1277,6 +1476,8 @@ onMounted(() => {
     margin-bottom: 24px;
   }
 
+  .cinema-section,
+  .movie-section,
   .ranking-section {
     margin-bottom: 20px;
   }
@@ -1324,6 +1525,12 @@ onMounted(() => {
   .section-title {
     font-size: 20px;
   }
+
+  .cinema-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -1331,6 +1538,10 @@ onMounted(() => {
   .ranking-grid {
     grid-template-columns: repeat(6, 1fr);
     gap: 24px;
+  }
+
+  .cinema-list {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 </style>

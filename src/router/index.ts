@@ -22,6 +22,9 @@ import FlashcardView from '../views/FlashcardView.vue'
 import MovieHomeView from '../views/movie/MovieHomeView.vue'
 import MyFavoritesView from '../views/movie/MyFavoritesView.vue'
 import BrowseHistoryView from '../views/movie/BrowseHistoryView.vue'
+import MovieDetailView from '../views/movie/MovieDetailView.vue'
+import SeatSelectionView from '../views/movie/SeatSelectionView.vue'
+import OrderConfirmView from '../views/movie/OrderConfirmView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -140,6 +143,21 @@ const router = createRouter({
       path: '/movie/history',
       name: 'movieHistory',
       component: BrowseHistoryView
+    },
+    {
+      path: '/movie/detail/:id',
+      name: 'movieDetail',
+      component: MovieDetailView
+    },
+    {
+      path: '/movie/seat-selection',
+      name: 'seatSelection',
+      component: SeatSelectionView
+    },
+    {
+      path: '/movie/order-confirm',
+      name: 'orderConfirm',
+      component: OrderConfirmView
     }
   ]
 })

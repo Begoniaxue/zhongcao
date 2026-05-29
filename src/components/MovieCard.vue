@@ -99,10 +99,12 @@ function handleFavorite(e: Event) {
 
 .favorite-btn {
   position: absolute;
-  bottom: 5px;
-  right: 5px;
-  width: 22px;
-  height: 22px;
+  bottom: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
   background: rgba(255, 255, 255, 0.95);
   border: none;
   border-radius: 50%;
@@ -125,20 +127,22 @@ function handleFavorite(e: Event) {
 }
 
 .heart-icon {
-  font-size: 12px;
+  font-size: 10px;
   line-height: 1;
 }
 
 @media (max-width: 480px) {
   .favorite-btn {
-    width: 20px;
-    height: 20px;
-    bottom: 4px;
-    right: 4px;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    min-height: 16px;
+    bottom: 5px;
+    right: 5px;
   }
   
   .heart-icon {
-    font-size: 11px;
+    font-size: 9px;
   }
   
   .rank-badge {
